@@ -1,4 +1,3 @@
-	city	website	response_code	sitemap_url	sitemap_exists
 0	Berlin	https://www.Berlin.de/	200	https://www.Berlin.de/sitemap.xml	FALSE
 1	Hamburg	https://www.Hamburg.de/	200	https://www.Hamburg.de/sitemap.xml	FALSE
 2	Muenchen	https://www.Muenchen.de/	200	https://www.Muenchen.de/sitemap.xml	TRUE
