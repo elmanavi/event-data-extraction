@@ -9,8 +9,9 @@ with p.open('r') as f:
         l = line.strip()
         a = l.split()
         j = {"city": a[1], "url":a[2]}
+        if a[5] == "TRUE":
+            j["sitemap"] = a[4]
         urls.append(j)
-        print(j)
 
 urls.pop(0)
 with open('unsorted_urls.json', 'w', encoding='utf-8') as f:
