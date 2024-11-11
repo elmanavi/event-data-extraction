@@ -23,12 +23,12 @@ def ask_robots(url: str, useragent="*") -> bool:
     try:
         url_parsed = urlparse(url)
         url_robots_txt = url_parsed.scheme + '://' + url_parsed.netloc + '/robots.txt'
-
+        print("robots.txt: ", url_robots_txt)
         robotParse = urllib.robotparser.RobotFileParser()
         robotParse.set_url(url_robots_txt)
         robotParse.read()
-        robotParse.site_maps()
 
+        print("Ask access to ", url)
         return robotParse.can_fetch('*', url)
     except Exception as e:
         print("Ask Robots :", e)
