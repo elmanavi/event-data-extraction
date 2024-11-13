@@ -14,10 +14,6 @@ import spacy
 root_path = Path.cwd()
 html_filter = ['header', 'footer', 'svg', 'img', 'nav', 'script']
 
-# load text categorizer model
-path_textcat = Path.joinpath(root_path, "blueprints/utils/text_cat_model")
-# textcat_nlp = spacy.load(path_textcat)
-
 # check if crawler is allowed to crawl url
 def ask_robots(url: str, useragent="*") -> bool:
     try:
@@ -62,20 +58,3 @@ def get_page_content(soup: BeautifulSoup):
 
 def prettify_content(content: str):
     return re.sub(r'\n\s*\n', '\n', content)
-
-# extract events from content
-# def scrape_events(content: str):
-#     # only store content from event pages
-#     if textcat_nlp(content)._.cats['event'] == 0:
-#         return
-#     try:
-#         events = ask_chatgpt(":".join(("Gib mir alle Events aus dem Text in einem json objekt mit key 'events' mit einem array aus json objekten aus mit den keys name, location, date(yyyy-mm-dd), address, category. Wenn kein Jahr angegeben ist, benutze das Jahr {}. Gebe nur die keys an die im Text Eindeutig identifizierbar sind. Veranstalter und location stimmen nicht immer überein".format(datetime.now().year), content)))
-#         events = json.loads(events)
-#         result_events = []
-#         for event in events['events']:
-#             new_event = Event(event_json=event)
-#             if new_event.name and new_event.date:
-#                 result_events.append(new_event)
-#         return result_events
-#     except Exception as e:
-#         print("scrape Events: ", e)

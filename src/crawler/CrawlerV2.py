@@ -5,13 +5,13 @@ import requests
 import httpx
 from urllib.parse import urljoin
 
-from src.crawler.utils.regEx import patterns
+from src.crawler.utils.regEx import PATTERNS
 from src.crawler.utils.keywords import KEYWORDS
 from src.crawler.crawler_service import *
 from urllib.robotparser import RobotFileParser
 
 URL_KEYWORDS = [
-    "veranstaltung", "event", "kalendar", "kunst", "kultur",
+    "veranstaltung", "event", "kalender", "kunst", "kultur",
     "freizeit", "termine", "highlights",
     "happenings", "ausgehen", "aktivitäten", "aktivitaeten", "programm",
     "wochenendtipps", "party", "festivals", "konzerte", "bühne", "buehne", "musik",
@@ -24,7 +24,7 @@ class Crawler:
     sys.path.append("..")
     # filter variables
     keywords = KEYWORDS
-    url_patterns = patterns
+    url_patterns = PATTERNS
 
     def __init__(self, url, url_type):
 
@@ -33,8 +33,9 @@ class Crawler:
         # set tupel of url and max depth to crawl
         self.queue = [(url, 2)]
         self.domain = urlparse(url).netloc
-        self.sitemaps_urls = crawl_sitemaps(url)
+        self.sitemaps_urls = get_sitemaps(url)
         print(self.url_type)
+
 
     def crawl(self):
         # Loop through the URLs in the queue until it is empty
@@ -45,7 +46,6 @@ class Crawler:
                 if self.include_url(url):
                     print("include URL: ", url)
                     self.visited_urls.add(url)
-
         else:
             print("Crawler startet...")
             while self.queue:
@@ -75,8 +75,6 @@ class Crawler:
                         # Add the new URLs to the queue and mark the current URL as visited
                         self.queue.extend(urls_to_crawl_tupels)
 
-                        # # extract events and store in db
-                        # content = get_page_content(soup)
 
                         print(f"Crawled {current_url} and found {len(urls_to_crawl)} new URLs to crawl")
                     else:
@@ -102,7 +100,7 @@ class Crawler:
         return urls_to_crawl
 
 
-    def include_url(self,url):
+    def include_url(self,url) -> bool:
         if not urlparse(url).netloc.lower() == self.domain.lower():
             print("Other Domain, excluded ", url)
         if url in self.visited_urls:
@@ -156,28 +154,11 @@ class Crawler:
                 else:
                     print("access denied")
                     return False
-            # if ask_robots(url, "*"):
-            #     response = requests.get(url)
-            #     if response.status_code >= 400:
-            #         print(f"Skipping {url} with status code {response.status_code}")
-            #         return False
-            #     else:
-            #         page_content = response.content
-            #         # Parse the HTML content and extract links to other pages
-            #         soup = BeautifulSoup(page_content, "html.parser")
-            #         content = get_page_content(soup)
-            #         print("searching content for keywords...")
-            #         if check_keywords(content, self.keywords):
-            #             print("Found Keyword in ", url)
-            #             return True
-            # else:
-            #     print("access denied")
-            #     return False
         else:
             return False
 
 
-def crawl_sitemaps(url):
+def get_sitemaps(url):
     url_parsed = urlparse(url)
     url_robots_txt = url_parsed.scheme + '://' + url_parsed.netloc + '/robots.txt'
     sitemaps = set()
@@ -228,7 +209,6 @@ def get_urls_from_sitemap(sitemap, urls):
 
     except Exception as e:
         print("Exception while resolving sitemap:", sitemap, "-", e)
-
     return urls
 
 
