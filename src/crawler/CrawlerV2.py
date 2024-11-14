@@ -162,32 +162,32 @@ def get_sitemaps(url):
     url_parsed = urlparse(url)
     url_robots_txt = url_parsed.scheme + '://' + url_parsed.netloc + '/robots.txt'
     sitemaps = set()
-    urls = set()
+    all_urls = set()
 
     robotParse = urllib.robotparser.RobotFileParser()
     robotParse.set_url(url_robots_txt)
     try:
         robotParse.read()
-        robot_sitempaps = robotParse.site_maps()
-        if robot_sitempaps:
-            sitemaps.update(robot_sitempaps)
-        # sitemaps.add(url_parsed.scheme + '://' + url_parsed.netloc + '/sitemap.xml')
+        robot_sitemaps = robotParse.site_maps()
+        if robot_sitemaps:
+            sitemaps.update(robot_sitemaps)
 
         for sitemap in sitemaps:
-            print(sitemap)
-            urls = get_urls_from_sitemap(sitemap, set())
-        print("result", len(urls))
-    except Exception as e:
-        print("Exception while parsing ", url_robots_txt, ": ", e)
-    return urls
+            print("Parsing sitemap:", sitemap)
+            sitemap_urls = get_urls_from_sitemap(sitemap, set())
+            all_urls.update(sitemap_urls)
 
+        print("Total URLs collected: ", len(all_urls))
+    except Exception as e:
+        print("Exception while parsing", url_robots_txt, ":", e)
+    return all_urls
 
 def get_urls_from_sitemap(sitemap, urls):
     print("Getting URLs from sitemap:", sitemap)
     try:
         response = httpx.get(sitemap)
         if response.status_code == httpx.codes.OK:
-            # Prüfen, ob die Sitemap eine gezippte Datei ist (anhand des Headers oder der Dateiendung)
+            # Prüfen, ob die Sitemap eine gezippte Datei ist
             content_type = response.headers.get('Content-Type', '')
             if 'gzip' in content_type or sitemap.endswith('.gz'):
                 # Falls gezippt, entpacken und lesen
@@ -210,5 +210,3 @@ def get_urls_from_sitemap(sitemap, urls):
     except Exception as e:
         print("Exception while resolving sitemap:", sitemap, "-", e)
     return urls
-
-
