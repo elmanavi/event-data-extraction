@@ -1,26 +1,24 @@
-import streamlit as st
 import requests
 import streamlit.components.v1 as components
-import json
 from src.crawler.CrawlerV2 import Crawler
+from src.persistence.db import *
 
-UNSORTED_URLS_PATH = "src/persistence/unsorted_urls.json"
-URLS_PATH = "src/persistence/urls.json"
-
-
-def get_unsorted_urls():
-    with open(UNSORTED_URLS_PATH, 'r', encoding='utf-8') as file:
-        unsorted_urls = json.load(file)
-    return unsorted_urls
-
+@st.cache_resource
+def init_connection():
+    return Database()
 
 def next_element():
+    if sub_urls:
+        save_sub_urls_to_element()
     if st.session_state.index < len(elements) - 1:
         st.session_state.index += 1
     st.session_state.visited_urls = None
 
 
+
 def prev_element():
+    if sub_urls:
+        save_sub_urls_to_element()
     if st.session_state.index > 0:
         st.session_state.index -= 1
     st.session_state.visited_urls = None
@@ -29,91 +27,56 @@ def prev_element():
 def submit_url_input():
     st.session_state.new_url = st.session_state.url_input
     st.session_state.url_input = ""
-    replace_element(st.session_state.index, UNSORTED_URLS_PATH, st.session_state.new_url)
-
-
-def add_element(element, file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        urls = json.load(file)
-
-    if element not in urls:
-        urls.append(element)
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(urls, f, ensure_ascii=False, indent=4)
-
-
-def remove_element(index, file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        urls = json.load(file)
-    urls.pop(index)
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(urls, f, ensure_ascii=False, indent=4)
-
-
-def replace_element(index, file_path, url):
-    if url:
-        with open(file_path, 'r', encoding="utf-8") as file:
-            urls = json.load(file)
-        urls[index]['url'] = url
-        if 'content' in urls[index]:
-            urls[index].pop('content')
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(urls, f, ensure_ascii=False, indent=4)
-
-def save_element_list(new_urls, file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        urls = json.load(file)
-    urls.extend(new_urls)
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(urls, f, ensure_ascii=False, indent=4)
-
+    new_element = {"url": st.session_state.new_url, "url_type": current_element["url_type"]}
+    db.replace_document_by_url(CollectionNames.UNSORTED_URLS, current_element["url"], new_element)
 
 def crawl_url(element, url_type):
-    element['crawled'] = True
-    with open(UNSORTED_URLS_PATH, 'w', encoding='utf-8') as f:
-        json.dump(elements, f, ensure_ascii=False, indent=4)
     crawler = Crawler(element['url'], url_type)
-    visited_urls = crawler.crawl()
-    return visited_urls
-
+    return crawler.crawl()
 
 def save_html_content(html_content):
-    with open(UNSORTED_URLS_PATH, 'r', encoding='utf-8') as file:
-        urls = json.load(file)
-        urls[st.session_state.index]["content"] = html_content
-    with open(UNSORTED_URLS_PATH, 'w', encoding='utf-8') as f:
-        json.dump(urls, f, ensure_ascii=False, indent=4)
+    current_element['content']=html_content
+    db.insert_document(CollectionNames.UNSORTED_URLS, current_element)
+
+def render_url_content(element):
+    try:
+        if "content" in element:
+            html_content = element["content"]
+        else:
+            response = requests.get(element["url"])
+            if response.status_code == 200:
+                html_content = response.text
+                save_html_content(html_content)
+            else:
+                html_content = "<p>Fehler: Die Seite konnte nicht geladen werden.</p>"
+        components.html(html_content, height=600, scrolling=True)
+    except Exception as e:
+        st.write("Es ist ein Fehler aufgetreten: ", e)
+
+def save_sub_urls_to_element():
+    new_element = elements[st.session_state.index]
+    new_element["sub_urls"] = list(save_sub_urls)
+    st.write(save_sub_urls)
+    db.insert_document(CollectionNames.UNSORTED_URLS, new_element)
 
 
-elements = get_unsorted_urls()
+# Variables
 if 'index' not in st.session_state:
     st.session_state.index = 0
 if "new_url" not in st.session_state:
     st.session_state.new_url = ""
 
+db = init_connection()
+elements = list(db.get_collection_contents(CollectionNames.UNSORTED_URLS))
 current_element = elements[st.session_state.index]
-url = elements[st.session_state.index]['url']
+current_url = current_element['url']
 
-# Content
-st.write(f"Aktuelle Seite: {url}")
-if "crawled" in current_element:
-    st.markdown("*Crawled*")
 
-try:
-    current_element = elements[st.session_state.index]
-    if "content" in current_element:
-        html_content = current_element["content"]
-    else:
-        response = requests.get(url)
-        if response.status_code == 200:
-            html_content = response.text
-            save_html_content(html_content)
-        else:
-            html_content = "<p>Fehler: Die Seite konnte nicht geladen werden.</p>"
-    components.html(html_content, height=600, scrolling=True)
-except Exception as e:
-    st.write("Es ist ein Fehler aufgetreten:")
-    st.write(e)
+# Page Content
+st.write(len(elements), " URLs in der Liste")
+st.write(f"Nr. {st.session_state.index} - Aktuelle Seite: {current_url}")
+
+render_url_content(current_element)
 
 # Buttons
 col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1])
@@ -124,53 +87,82 @@ with col2:
     st.button("Weiter", on_click=next_element, disabled=(st.session_state.index == len(elements) - 1))
 with col3:
     st.button("URL speichern", on_click=lambda: [
-        add_element(elements[st.session_state.index - 1], URLS_PATH),
-        remove_element(st.session_state.index - 1, UNSORTED_URLS_PATH),
+        db.insert_document(CollectionNames.EVENT_URLS, elements[st.session_state.index - 1]),
+        db.delete_document_by_url(CollectionNames.UNSORTED_URLS,elements[st.session_state.index - 1]['url']),
     ])
 with col4:
-    st.button("URL löschen", on_click=lambda: remove_element(st.session_state.index - 1, UNSORTED_URLS_PATH))
+    st.button("URL löschen", on_click=lambda: db.delete_document_by_url(CollectionNames.UNSORTED_URLS,current_element['url']))
 with col5:
     if st.button("Crawl URL"):
-        visited_urls = crawl_url(elements[st.session_state.index], "city_url")
-        st.session_state.visited_urls = visited_urls  # Store crawled URLs in session state
+        visited_urls = set(crawl_url(current_element, current_element["url_type"])) - {
+            item['url'] for item in elements if 'url' in item
+        }
+
+        event_elements = {url for url in visited_urls if "veranstaltung" in url.lower() or "events" in url.lower()}
+        st.session_state.visited_urls = visited_urls - event_elements
+
+        save_event_urls = [{"url": url, "url_type": current_element["url_type"]} for url in event_elements]
+        db.insert_document_list(CollectionNames.EVENT_URLS, save_event_urls)
+
+        st.write("Saved", len(save_event_urls), "Event Urls")
+
 
 # Display and mark crawled URLs
+sub_urls = set()
 if 'visited_urls' in st.session_state and st.session_state.visited_urls:
-    st.write("Crawled URLs:")
+    sub_urls.update(st.session_state.visited_urls)
+if 'sub_urls' in current_element:
+    sub_urls.update(set(current_element['sub_urls']))
+if sub_urls:
+    sub_urls = sub_urls - {item['url'] for item in elements if 'url' in item}
+    st.write(len(sub_urls), " Sub URLs:")
     with st.form(key="sort_crawler_urls"):
         # Store checkboxes for each URL
         event_urls = []
         unsorted_urls = []
-
-        for i, crawled_url in enumerate(st.session_state.visited_urls):
+        delete_urls = []
+        for i, crawled_url in enumerate(sub_urls):
             st.write(crawled_url)
 
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
                 is_event = st.checkbox("Mark as Event URL", key=f"event_{i}")
             with col2:
                 is_unsorted = st.checkbox("Mark as Unsorted URL", key=f"unsorted_{i}")
-
+            with col3:
+                delete = st.checkbox ("URL löschen", key=f"delete_{i}")
             # Collect URLs based on checkbox selection
             if is_event:
                 event_urls.append(crawled_url)
             if is_unsorted:
                 unsorted_urls.append(crawled_url)
+            if delete:
+                delete_urls.append(crawled_url)
 
         # Submit button to save changes
         if st.form_submit_button("Submit"):
             # Add URLs to appropriate JSON files based on checkbox selections
             event_elements = []
             unsorted_elements = []
+            save_sub_urls = st.session_state.visited_urls
             for url in event_urls:
-                new_element = {"city": elements[st.session_state.index]["city"], "url": url}
+                new_element = {"url_type": elements[st.session_state.index]["url_type"], "url": url}
                 event_elements.append(new_element)
+                save_sub_urls.remove(url)
             for url in unsorted_urls:
-                new_element = {"city": elements[st.session_state.index]["city"], "url": url}
+                new_element = {"url_type": elements[st.session_state.index]["url_type"], "url": url}
                 unsorted_elements.append(new_element)
-            save_element_list(event_elements, URLS_PATH)
-            save_element_list(unsorted_elements, UNSORTED_URLS_PATH)
+                save_sub_urls.remove(url)
+            for url in delete_urls:
+                save_sub_urls.remove(url)
+            db.insert_document_list(CollectionNames.EVENT_URLS, event_elements)
+            db.insert_document_list(CollectionNames.UNSORTED_URLS, unsorted_elements)
+
+            if save_sub_urls:
+                save_sub_urls_to_element()
+
             st.write("URLs have been processed and saved.")
 
 # Text input to replace URL
 st.text_input("Aktuelle URL ersetzen mit:", on_change=submit_url_input, key="url_input")
+
