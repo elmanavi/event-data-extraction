@@ -1,9 +1,8 @@
 
 from pymongo.mongo_client import MongoClient
 import streamlit as st
-from enum import Enum
+import re
 
-# URI = "mongodb+srv://event_data_extraction_application:J1TRVDBbl4kSaxTD@cluster0.rtcz4.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 DB_NAME = "event_data"
 
 class CollectionNames:
@@ -60,7 +59,7 @@ class Database:
       Löscht ein Dokument aus der Collection basierend auf der URL.
       """
       collection = self.get_collection(collection_name)
-      result = collection.delete_one({"url": url})
+      result = collection.delete_one({"url": re.compile(url, re.IGNORECASE)})
       return result.deleted_count  # Gibt die Anzahl der gelöschten Dokumente zurück (1 oder 0)
 
    def get_collection_contents(self, collection_name):
