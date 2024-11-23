@@ -3,6 +3,10 @@
 This Streamlit application serves as a test environment for collecting and processing event data to train 
 Natural Language Processing (NLP) models.
 
+## Install Project
+Requirements: Python 3.12
+install requirements.txt
+
 ## Features
 
 - **Data Collection**: Collects event-related data from various sources to create a training dataset.
