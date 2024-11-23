@@ -67,7 +67,7 @@ coverage.xml
 *.pot
 
 # Streamlit
-.streamlit
+.streamlit/secrets.toml
 
 # Sphinx documentation
 docs/_build/
