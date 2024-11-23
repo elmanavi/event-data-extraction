@@ -2,7 +2,7 @@ import re
 
 # define patterns to filter urls that should not be crawled
 
-patterns = [
+PATTERNS = [
     re.compile(r'.*about us*.*', re.IGNORECASE),
     re.compile(r'.*about*.*us.*', re.IGNORECASE),
     re.compile(r'.*abmelden*.*', re.IGNORECASE),

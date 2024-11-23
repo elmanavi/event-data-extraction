@@ -66,17 +66,8 @@ coverage.xml
 *.mo
 *.pot
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
+# Streamlit
+.streamlit
 
 # Sphinx documentation
 docs/_build/
@@ -105,9 +96,11 @@ celerybeat-schedule
 .venv
 env/
 venv/
+venv_3.10/
 ENV/
 env.bak/
 venv.bak/
+
 
 # Spyder project settings
 .spyderproject
@@ -123,3 +116,5 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+
