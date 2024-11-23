@@ -3,6 +3,8 @@ import streamlit as st
 st.set_page_config(
     page_title="Hello",
     page_icon="👋",
+    theme="light",  # Setzt das Theme auf "light", du kannst auch "dark" verwenden
+
 )
 
 st.write("# Welcome to Streamlit! 👋")
