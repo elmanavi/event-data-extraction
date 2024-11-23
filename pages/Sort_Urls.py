@@ -7,22 +7,18 @@ from src.persistence.db import *
 def init_connection():
     return Database()
 
+def get_all_urls():
+    return list(db.get_collection_contents(CollectionNames.UNSORTED_URLS))
+
 def next_element():
-    if sub_urls:
-        save_sub_urls_to_element()
     if st.session_state.index < len(elements) - 1:
         st.session_state.index += 1
     st.session_state.visited_urls = None
 
-
-
 def prev_element():
-    if sub_urls:
-        save_sub_urls_to_element()
     if st.session_state.index > 0:
         st.session_state.index -= 1
     st.session_state.visited_urls = None
-
 
 def submit_url_input():
     st.session_state.new_url = st.session_state.url_input
@@ -49,31 +45,40 @@ def render_url_content(element):
                 save_html_content(html_content)
             else:
                 html_content = "<p>Fehler: Die Seite konnte nicht geladen werden.</p>"
-        components.html(html_content, height=600, scrolling=True)
+        components.html(html_content, height=400, scrolling=True)
     except Exception as e:
         st.write("Es ist ein Fehler aufgetreten: ", e)
 
 def save_sub_urls_to_element():
     new_element = elements[st.session_state.index]
     new_element["sub_urls"] = list(save_sub_urls)
-    st.write(save_sub_urls)
     db.insert_document(CollectionNames.UNSORTED_URLS, new_element)
 
+def save_event_url():
+    result=db.insert_document(CollectionNames.EVENT_URLS, elements[st.session_state.index - 1]),
+    result=db.delete_document_by_url(CollectionNames.UNSORTED_URLS, elements[st.session_state.index - 1]['url'])
+    st.session_state.all_urls = get_all_urls()
+
+def remove_url():
+    result = db.delete_document_by_url(CollectionNames.UNSORTED_URLS, current_element['url']),
+    st.session_state.all_urls = get_all_urls()
 
 # Variables
+db = init_connection()
 if 'index' not in st.session_state:
     st.session_state.index = 0
 if "new_url" not in st.session_state:
     st.session_state.new_url = ""
+if "all_urls" not in st.session_state:
+    st.session_state.all_urls = get_all_urls()
 
-db = init_connection()
-elements = list(db.get_collection_contents(CollectionNames.UNSORTED_URLS))
+elements = st.session_state.all_urls
 current_element = elements[st.session_state.index]
 current_url = current_element['url']
 
 
 # Page Content
-st.write(len(elements), " URLs in der Liste")
+st.write(f"{len(elements)} URLs in der Liste")
 st.write(f"Nr. {st.session_state.index} - Aktuelle Seite: {current_url}")
 
 render_url_content(current_element)
@@ -86,21 +91,20 @@ with col1:
 with col2:
     st.button("Weiter", on_click=next_element, disabled=(st.session_state.index == len(elements) - 1))
 with col3:
-    st.button("URL speichern", on_click=lambda: [
-        db.insert_document(CollectionNames.EVENT_URLS, elements[st.session_state.index - 1]),
-        db.delete_document_by_url(CollectionNames.UNSORTED_URLS,elements[st.session_state.index - 1]['url']),
-    ])
+    st.button("Als Event-URL speichern", on_click=save_event_url)
+
 with col4:
-    st.button("URL löschen", on_click=lambda: db.delete_document_by_url(CollectionNames.UNSORTED_URLS,current_element['url']))
+    st.button("URL löschen", on_click= remove_url)
 with col5:
     if st.button("Crawl URL"):
         visited_urls = set(crawl_url(current_element, current_element["url_type"])) - {
             item['url'] for item in elements if 'url' in item
         }
 
-        event_elements = {url for url in visited_urls if "veranstaltung" in url.lower() or "events" in url.lower()}
+        event_elements = {url for url in visited_urls if "veranstaltung" in url.lower() or "event" in url.lower()}
         st.session_state.visited_urls = visited_urls - event_elements
 
+        # gefundene Event URLs direkt in DB speichern
         save_event_urls = [{"url": url, "url_type": current_element["url_type"]} for url in event_elements]
         db.insert_document_list(CollectionNames.EVENT_URLS, save_event_urls)
 
@@ -144,7 +148,7 @@ if sub_urls:
             # Add URLs to appropriate JSON files based on checkbox selections
             event_elements = []
             unsorted_elements = []
-            save_sub_urls = st.session_state.visited_urls
+            save_sub_urls = sub_urls
             for url in event_urls:
                 new_element = {"url_type": elements[st.session_state.index]["url_type"], "url": url}
                 event_elements.append(new_element)
@@ -160,6 +164,9 @@ if sub_urls:
 
             if save_sub_urls:
                 save_sub_urls_to_element()
+            else:
+                remove_url()
+                st.write("Seite vollständig verarbeitet. URL wurde gelöscht.")
 
             st.write("URLs have been processed and saved.")
 
