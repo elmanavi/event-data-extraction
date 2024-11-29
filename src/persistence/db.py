@@ -8,6 +8,7 @@ DB_NAME = "event_data"
 class CollectionNames:
    EVENT_URLS = "event_urls"
    UNSORTED_URLS = "unsorted_urls"
+   MAPS_QUERIES = "maps_search_queries"
 
 class Database:
    def __init__(self):
@@ -26,7 +27,7 @@ class Database:
       """
       return self.db[collection_name]
 
-   def insert_document(self, collection_name, document):
+   def insert_or_update_document(self, collection_name, document):
       """
       Fügt ein Dokument in die angegebene Collection ein.
       """
@@ -43,7 +44,7 @@ class Database:
       return list(collection.find(query))
 
 
-   def insert_document_list(self, collection_name, document_list):
+   def insert_url_list(self, collection_name, document_list):
       """
       Insert Elements to collection or update existing element if url already exists
       """
@@ -69,3 +70,11 @@ class Database:
    def replace_document_by_url(self,collection_name, url, replacement):
       collection = self.get_collection(collection_name)
       collection.replace_one({"url": url},replacement)
+
+   def insert_document(self, collection_name, document):
+      collection = self.get_collection(collection_name)
+      return collection.insert_one(document)
+
+   def collection_names(self):
+      return self.db.list_collection_names()
+
