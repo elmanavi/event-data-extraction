@@ -32,7 +32,7 @@ def crawl_url(element, url_type):
 
 def save_html_content(html_content):
     current_element['content']=html_content
-    db.insert_document(CollectionNames.UNSORTED_URLS, current_element)
+    db.insert_or_update_document(CollectionNames.UNSORTED_URLS, current_element)
 
 def render_url_content(element):
     try:
@@ -52,10 +52,10 @@ def render_url_content(element):
 def save_sub_urls_to_element():
     new_element = elements[st.session_state.index]
     new_element["sub_urls"] = list(save_sub_urls)
-    db.insert_document(CollectionNames.UNSORTED_URLS, new_element)
+    db.insert_or_update_document(CollectionNames.UNSORTED_URLS, new_element)
 
 def save_event_url():
-    result=db.insert_document(CollectionNames.EVENT_URLS, elements[st.session_state.index - 1]),
+    result=db.insert_or_update_document(CollectionNames.EVENT_URLS, elements[st.session_state.index - 1]),
     result=db.delete_document_by_url(CollectionNames.UNSORTED_URLS, elements[st.session_state.index - 1]['url'])
     st.session_state.all_urls = get_all_urls()
 
@@ -106,7 +106,7 @@ with col5:
 
         # gefundene Event URLs direkt in DB speichern
         save_event_urls = [{"url": url, "url_type": current_element["url_type"]} for url in event_elements]
-        db.insert_document_list(CollectionNames.EVENT_URLS, save_event_urls)
+        db.insert_url_list(CollectionNames.EVENT_URLS, save_event_urls)
 
         st.write("Saved", len(save_event_urls), "Event Urls")
 
@@ -159,8 +159,8 @@ if sub_urls:
                 save_sub_urls.remove(url)
             for url in delete_urls:
                 save_sub_urls.remove(url)
-            db.insert_document_list(CollectionNames.EVENT_URLS, event_elements)
-            db.insert_document_list(CollectionNames.UNSORTED_URLS, unsorted_elements)
+            db.insert_url_list(CollectionNames.EVENT_URLS, event_elements)
+            db.insert_url_list(CollectionNames.UNSORTED_URLS, unsorted_elements)
 
             if save_sub_urls:
                 save_sub_urls_to_element()
@@ -171,5 +171,7 @@ if sub_urls:
             st.write("URLs have been processed and saved.")
 
 # Text input to replace URL
-st.text_input("Aktuelle URL ersetzen mit:", on_change=submit_url_input, key="url_input")
+st.text_input("Aktuelle URL ersetzen mit:", on_change=submit_url_input, key="url_input", placeholder="https://example-url/events.de")
+
+
 
