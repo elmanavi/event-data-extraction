@@ -26,7 +26,7 @@ class Crawler:
     keywords = KEYWORDS
     url_patterns = PATTERNS
 
-    def __init__(self, url: str, url_type: str):
+    def __init__(self, url: str, url_type: str, depth: int):
 
         self.visited_urls = set()
         self.excluded_urls = set()
@@ -34,7 +34,7 @@ class Crawler:
         print(self.excluded_urls)
         self.url_type = url_type
         # set tupel of url and max depth to crawl
-        self.queue = [(url, 2)]
+        self.queue = [(url, depth)]
         self.domain = urlparse(url).netloc
         self.sitemaps_urls = get_sitemaps(url)
         print(self.url_type)

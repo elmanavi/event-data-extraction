@@ -38,13 +38,16 @@ def crawl(item):
             st.info(f"Crawle {item["url"]}")
 
             if "overview_pages" not in item:
-                crawler = Crawler(item["url"], item["url_type"])
+                crawler = Crawler(item["url"], item["url_type"], depth=2)
                 results = crawler.crawl()
         except Exception as e:
             st.error(f"Fehler beim crawlen: {e}")
-
+            db.delete_document_by_url(source,item["url"])
+            return
         # Übersicht-Seiten erkennen
-        overview_regex = re.compile(r"^https?:\/\/([a-zA-Z0-9.-]*\/)*(?!(advent))(kalender|.*veranstaltungen|veranstaltungskalender|.*events?|.*event-?kalender|([a-zA-Z]*)?programm|gottesdienste|auff(ü|ue)hrungen|termine|spielplan)(\/?|(\/?[a-zA-Z]*)\.[a-zA-Z]*)?$", re.IGNORECASE)
+        overview_regex = re.compile(
+            r"^https?:\/\/([a-zA-Z0-9.-]*\/)*(?!(advent))(kalender|.*veranstaltungen|veranstaltungskalender|.*events?|.*event-?kalender|([a-zA-Z]*)?programm|gottesdienste|auff(ü|ue)hrungen|termine|spielplan)(\/?|(\/?[a-zA-Z]*)\.[a-zA-Z]*)?$",
+            re.IGNORECASE)
         overview_pages = set()
         # URLs sortieren
 
@@ -55,6 +58,9 @@ def crawl(item):
             else:
                 sub_urls.append(url)
         if not overview_pages:
+            overview_regex = re.compile(
+                r"^https?:\/\/([a-zA-Z0-9.-]*\/)*(?!(advent))(kalender|.*veranstaltungen|veranstaltungskalender|.*events?|.*event-?kalender|([a-zA-Z]*)?programm|gottesdienste|auff(ü|ue)hrungen|termine|spielplan)(\/?|(\/?[a-zA-Z]*)\.[a-zA-Z]*)?",
+                re.IGNORECASE)
             for url in results:
                 match = overview_regex.search(url)
                 if match:
@@ -114,18 +120,20 @@ with st.form("Crawler Settings"):
                                     new_elements = []
                                     with st.expander("Maps Ergebnisse"):
                                         for result in maps_results:
-                                            element = {
-                                                "url_type": type_id,
-                                                "url": result.website_uri,
-                                                "meta":{
-                                                    "website_host": result.display_name.text,
-                                                    "location": result.formatted_address.split(", ")[1],
-                                                    "address": result.formatted_address,
-                                                    "maps_types": list(result.types)
-                                                }}
-                                            st.write(element["url"])
-                                            new_elements.append(element)
-                                        db.insert_url_list(CollectionNames.UNSORTED_URLS, new_elements)
+                                            if "facebook" not in result.website_uri and "instagram" not in result.website_uri and "tiktok" not in result.website_uri:
+                                                element = {
+                                                    "url_type": type_id,
+                                                    "url": result.website_uri,
+                                                    "meta":{
+                                                        "website_host": result.display_name.text,
+                                                        "location": result.formatted_address.split(", ")[1],
+                                                        "address": result.formatted_address,
+                                                        "maps_types": list(result.types)
+                                                    }}
+                                                st.write(element["url"])
+                                                new_elements.append(element)
+                                        if new_elements:
+                                            db.insert_url_list(CollectionNames.UNSORTED_URLS, new_elements)
 
 
                                 if "maps_searches" in item:
