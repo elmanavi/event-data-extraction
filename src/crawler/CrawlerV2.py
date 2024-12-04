@@ -12,10 +12,10 @@ from urllib.robotparser import RobotFileParser
 
 URL_KEYWORDS = [
     "veranstaltung", "event", "kalender", "kunst", "kultur",
-    "freizeit", "termine", "highlights",
+    "freizeit", "termine",
     "happenings", "ausgehen", "aktivitäten", "aktivitaeten", "programm",
     "wochenendtipps", "party", "festivals", "konzerte", "bühne", "buehne", "musik",
-    "shows", "theater", "veranstaltungskalender", "ausstellungen", "tipps", "feste", "erleben",
+    "shows", "theater", "veranstaltungskalender", "ausstellungen", "feste", "erleben",
     "entdecken", "spielplan", "veranstaltungsplan"
 ]
 
@@ -31,7 +31,6 @@ class Crawler:
         self.visited_urls = set()
         self.excluded_urls = set()
         self.excluded_urls.update(set(get_disallowed_urls(url)))
-        print(self.excluded_urls)
         self.url_type = url_type
         # set tupel of url and max depth to crawl
         self.queue = [(url, depth)]
@@ -68,7 +67,7 @@ class Crawler:
                         page_content = response.content
 
                         # Parse the HTML content and extract links to other pages
-                        soup = BeautifulSoup(page_content, "html.parser")
+                        soup = BeautifulSoup(page_content, "lxml")
                         urls_to_crawl = self.find_urls(soup, current_url)
                         urls_to_crawl_tupels = []
                         for url in urls_to_crawl:
