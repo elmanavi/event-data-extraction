@@ -91,8 +91,8 @@ if "maps_queries" not in st.session_state:
 
 
 with st.form("Crawler Settings"):
-    source = st.selectbox("Quelle auswählen:", (CollectionNames.EVENT_URLS, CollectionNames.UNSORTED_URLS))
-    count = st.number_input("Insert a number", step=1)
+    source = CollectionNames.UNSORTED_URLS
+    count = st.number_input("Wie viele URLs sollen gecrawled werden?", step=1)
     maps = st.checkbox("Google Maps Ergebnisse finden")
     # Every form must have a submit button.
     submitted = st.form_submit_button("Starte Crawler")
