@@ -1,14 +1,10 @@
 import urllib
 import re
-import json
 import copy
-import datetime
-from datetime import datetime
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from urllib.robotparser import RobotFileParser
 from pathlib import Path
-import spacy
 import requests
 
 
