@@ -14,9 +14,8 @@ URL_KEYWORDS = [
     "veranstaltung", "event", "kalender", "kunst", "kultur",
     "freizeit", "termine",
     "happenings", "ausgehen", "aktivitäten", "aktivitaeten", "programm",
-    "wochenendtipps", "party", "festivals", "konzerte", "bühne", "buehne", "musik",
-    "shows", "theater", "veranstaltungskalender", "ausstellungen", "feste", "erleben",
-    "entdecken", "spielplan", "veranstaltungsplan"
+    "wochenendtipps", "party", "festivals", "konzerte", "musik",
+    "shows", "theater", "veranstaltungskalender", "ausstellungen", "feste", "spielplan", "veranstaltungsplan"
 ]
 
 

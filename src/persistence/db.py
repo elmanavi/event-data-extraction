@@ -77,4 +77,3 @@ class Database:
 
    def collection_names(self):
       return self.db.list_collection_names()
-

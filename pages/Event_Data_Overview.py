@@ -1,9 +1,6 @@
 import streamlit.components.v1 as components
-
-from pages.Sort_Urls import event_urls
 from src.persistence.db import *
 import streamlit as st
-from urllib.parse import urlparse
 import streamlit_nested_layout
 
 @st.cache_resource

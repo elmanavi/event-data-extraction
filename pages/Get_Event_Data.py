@@ -33,14 +33,15 @@ def process_url(url:str, el):
                     components.html(cleaned_html, height=400, scrolling=True)
                 st.write(f"GPT Klasse: {gpt_class["class"]}")
 
-            if gpt_class["class"] == "Event":
+            if gpt_class["class"] != "None":
                 new_element = {
                     "base_url_id": el["_id"],
                     "base_url": el["url"],
-                    "url": overview_url,
+                    "url": url,
                     "html": page_content,
                     "cleaned_html": cleaned_html,
-                    "cleaned_text": cleaned_text
+                    "cleaned_text": cleaned_text,
+                    "class": gpt_class["class"]
                 }
                 db.insert_or_update_document(CollectionNames.EVENT_URLS, new_element)
                 return new_element
@@ -67,7 +68,7 @@ if get_event_data:
     suburls_count = 10
     st.info(f"Es werden immer nur max. {suburls_count} Suburls der Übersichtsseiten angeschaut, damit die Daten ausgeglichen bleiben")
     for el in st.session_state.filtered_list:
-        st.info(f"Daten sammeln für {el["url"]}")
+        st.info(f"Daten sammeln für {el["url"]} mit {len(el["overview_pages"])} Übersichtsseite")
         if counter <= 0:
             break  # Bricht die äußere Schleife ab
         update_element = el
@@ -87,7 +88,7 @@ if get_event_data:
                                 href = link["href"]
                                 url = urljoin(overview_url, href)
                                 url = urlparse(url)._replace(query="", fragment="").geturl()
-                                if overview_url in url and overview_url != url:
+                                if overview_url != url:
                                     urls.add(url)
                         except:
                             print("Exception while processing links")

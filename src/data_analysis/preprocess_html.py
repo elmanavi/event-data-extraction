@@ -12,17 +12,17 @@ def get_clean_html(page_content:str):
         print("Kein <body>-Tag im HTML gefunden!")
         return None
     else:
-        for tag in body_content.find_all(["footer", "script", "header", "nav", "menu", "img"]):
+        for tag in body_content.find_all(["footer", "script", "nav", "menu", "img"]):
             tag.decompose()
-        for tag in body_content.find_all(True):
-            try:
-                if any(keyword in str(tag.get('class', [])).lower() for keyword in
-                       ['navigation', 'menu', 'nav', 'language']) or \
-                        any(keyword in tag.get('id', '').lower() for keyword in
-                            ['navigation', 'menu', 'nav', 'language']):
-                    tag.decompose()  # Entfernt das Tag und seinen Inhalt
-            except Exception as e:
-                print(f"{tag.name} {e}")
+        # for tag in body_content.find_all(True):
+        #     try:
+        #         if any(keyword in str(tag.get('class', [])).lower() for keyword in
+        #                ['navigation', 'menu', 'nav', 'language']) or \
+        #                 any(keyword in tag.get('id', '').lower() for keyword in
+        #                     ['navigation', 'menu', 'nav', 'language']):
+        #             tag.decompose()  # Entfernt das Tag und seinen Inhalt
+        #     except Exception as e:
+        #         print(f"{tag.name} {e}")
 
         # Entfernen von Kommentaren
         for comment in body_content.find_all(string=lambda text: isinstance(text, Comment)):
