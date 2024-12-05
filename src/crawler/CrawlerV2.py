@@ -1,7 +1,6 @@
 import gzip
 import sys
 
-import requests
 import httpx
 from urllib.parse import urljoin
 
