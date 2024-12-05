@@ -12,11 +12,10 @@ from urllib.robotparser import RobotFileParser
 
 URL_KEYWORDS = [
     "veranstaltung", "event", "kalender", "kunst", "kultur",
-    "freizeit", "termine", "highlights",
+    "freizeit", "termine",
     "happenings", "ausgehen", "aktivitäten", "aktivitaeten", "programm",
-    "wochenendtipps", "party", "festivals", "konzerte", "bühne", "buehne", "musik",
-    "shows", "kino", "theater", "veranstaltungskalender", "ausstellungen", "tipps", "feste", "erleben",
-    "entdecken"
+    "wochenendtipps", "party", "festivals", "konzerte", "musik",
+    "shows", "theater", "veranstaltungskalender", "ausstellungen", "feste", "spielplan", "veranstaltungsplan"
 ]
 
 
@@ -26,15 +25,18 @@ class Crawler:
     keywords = KEYWORDS
     url_patterns = PATTERNS
 
-    def __init__(self, url, url_type):
+    def __init__(self, url: str, url_type: str, depth: int):
 
         self.visited_urls = set()
+        self.excluded_urls = set()
+        self.excluded_urls.update(set(get_disallowed_urls(url)))
         self.url_type = url_type
         # set tupel of url and max depth to crawl
-        self.queue = [(url, 2)]
+        self.queue = [(url, depth)]
         self.domain = urlparse(url).netloc
         self.sitemaps_urls = get_sitemaps(url)
         print(self.url_type)
+        print(f"Crawler startet for {url}")
 
 
     def crawl(self):
@@ -42,7 +44,6 @@ class Crawler:
         if self.sitemaps_urls:
             print("Sitemaps Crawler startet...")
             for url in self.sitemaps_urls:
-
                 if self.include_url(url):
                     print("include URL: ", url)
                     self.visited_urls.add(url)
@@ -54,8 +55,8 @@ class Crawler:
                     url_tupels = self.queue.pop(0)
                     current_url = url_tupels[0]
                     depth = url_tupels[1]
-                    access = ask_robots(current_url, "*")
-
+                    # access = ask_robots(current_url, "*")
+                    access = True
                     # make request
                     if access and depth > 0:
                         response = requests.get(current_url)
@@ -65,7 +66,7 @@ class Crawler:
                         page_content = response.content
 
                         # Parse the HTML content and extract links to other pages
-                        soup = BeautifulSoup(page_content, "html.parser")
+                        soup = BeautifulSoup(page_content, "lxml")
                         urls_to_crawl = self.find_urls(soup, current_url)
                         urls_to_crawl_tupels = []
                         for url in urls_to_crawl:
@@ -101,61 +102,60 @@ class Crawler:
 
 
     def include_url(self,url) -> bool:
-        if not urlparse(url).netloc.lower() == self.domain.lower():
-            print("Other Domain, excluded ", url)
-        if url in self.visited_urls:
-            print("Already visited ", url)
-        if not check_regex(url, self.url_patterns):
-            print("RegEx Match, exlcluded ", url)
-        if url in self.queue:
-            print("Url already in queue")
 
-        if urlparse(url).netloc.lower() == self.domain.lower() \
-                and url not in self.visited_urls \
-                and check_regex(url, self.url_patterns)\
-                and url not in self.queue:
-            print("Checking ", url)
-            if self.url_type == "city_url":
-                if any(keyword in url for keyword in URL_KEYWORDS):
-                    print("Found Event URL:", url)
-                    return True
-            else:
-                if ask_robots(url,"*"):
-                    response = requests.get(url)
-                    if response.status_code >= 400:
-                        print(f"Skipping {url} with status code {response.status_code}")
-                        return False
-                    else:
-                        page_content = response.content
-                        # Parse the HTML content and extract links to other pages
-                        soup = BeautifulSoup(page_content, "html.parser")
-                        # remove navigation elements
-                        for nav in soup.find_all('nav'):
-                            nav.decompose()
-
-                        # Step 2: Remove elements with "navigation" or "menu" in the id or class attributes
-
-                        nav_elements= []
-                        nav_elements.extend(soup.find_all(id=re.compile(r'.*navigation.*')))
-                        nav_elements.extend(soup.find_all(id=re.compile(r'.*menu.*')))
-                        nav_elements.extend(soup.find_all(class_=re.compile(r'.*navigation.*')))
-                        nav_elements.extend(soup.find_all(class_=re.compile(r'.*menu.*')))
-
-                        print(len(nav_elements))
-                        for elem in nav_elements:
-                            if elem:
-                                elem.decompose()
-
-                        content = get_page_content(soup)
-                        print("searching content for keywords...")
-                        if check_keywords(content, self.keywords):
-                            print("Found Keyword in ", url)
-                            return True
-                else:
-                    print("access denied")
-                    return False
-        else:
+        if urlparse(url).netloc.lower() != self.domain.lower() \
+                or url in self.visited_urls \
+                or not check_regex(url, self.url_patterns)\
+                or url in self.queue\
+                or url in self.excluded_urls:
             return False
+        else:
+            print("Checking ", url)
+            # if self.url_type == "city":
+            if any(keyword in url for keyword in URL_KEYWORDS):
+                print("Found Event URL:", url)
+                return True
+            else:
+                self.excluded_urls.add(url)
+                return False
+            # else:
+            #     # if ask_robots(url,"*"):
+            #     if True:
+            #         response = requests.get(url)
+            #         if response.status_code >= 400:
+            #             self.excluded_urls.add(url)
+            #             print(f"Skipping {url} with status code {response.status_code}")
+            #             return False
+            #         else:
+            #             page_content = response.content
+            #             # Parse the HTML content and extract links to other pages
+            #             soup = BeautifulSoup(page_content, "html.parser")
+            #             # remove navigation elements
+            #             for nav in soup.find_all('nav'):
+            #                 nav.decompose()
+            #
+            #             # Step 2: Remove elements with "navigation" or "menu" in the id or class attributes
+            #
+            #             nav_elements= []
+            #             nav_elements.extend(soup.find_all(id=re.compile(r'.*navigation.*')))
+            #             nav_elements.extend(soup.find_all(id=re.compile(r'.*menu.*')))
+            #             nav_elements.extend(soup.find_all(class_=re.compile(r'.*navigation.*')))
+            #             nav_elements.extend(soup.find_all(class_=re.compile(r'.*menu.*')))
+            #
+            #             print(len(nav_elements))
+            #             for elem in nav_elements:
+            #                 if elem:
+            #                     elem.decompose()
+            #
+            #             content = get_page_content(soup)
+            #             print("searching content for keywords...")
+            #             if check_keywords(content, self.keywords):
+            #                 print("Found Keyword in ", url)
+            #                 return True
+            #             else:
+            #                 self.excluded_urls.add(url)
+            #                 return False
+
 
 
 def get_sitemaps(url):
@@ -171,15 +171,19 @@ def get_sitemaps(url):
         robot_sitemaps = robotParse.site_maps()
         if robot_sitemaps:
             sitemaps.update(robot_sitemaps)
+        else:
+            sitemaps.add(url_parsed.scheme + "://" + url_parsed.netloc + "/sitemap.xml")
+            sitemaps.add(url_parsed.scheme + "://" + url_parsed.netloc + "/sitemaps.xml")
+
 
         for sitemap in sitemaps:
             print("Parsing sitemap:", sitemap)
             sitemap_urls = get_urls_from_sitemap(sitemap, set())
             all_urls.update(sitemap_urls)
 
-        print("Total URLs collected: ", len(all_urls))
+        print("Total urls collected from sitemaps: ", len(all_urls))
     except Exception as e:
-        print("Exception while parsing", url_robots_txt, ":", e)
+        print("Exception while parsing sitemap from ", url, ":", e)
     return all_urls
 
 def get_urls_from_sitemap(sitemap, urls):
