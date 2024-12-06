@@ -89,7 +89,10 @@ db = init_connection()
 if "maps_queries" not in st.session_state:
     st.session_state.maps_queries = list(db.get_collection_contents(CollectionNames.MAPS_QUERIES))
 
-
+# content
+st.write("""
+    Wähle aus für wie viele Urls der **Crawler** gestartert werden soll. Diese werden zufällig aus den noch nicht gecrawlten Urls aus der DB ausgewählt.
+    Wenn **"Google Maps Ergebnisse finden"** aktiviert ist, werden bei den Stadtportalen zusätzlich noch neue Veranstaltungsorte gesucht.""")
 with st.form("Crawler Settings"):
     source = CollectionNames.UNSORTED_URLS
     count = st.number_input("Wie viele URLs sollen gecrawled werden?", step=1)
@@ -145,7 +148,6 @@ with st.form("Crawler Settings"):
                             else:
                                 st.success("Maps Ergebnisse bereits in DB")
 
-                    st.info("Crawler gestartet...das kann eine Weile dauern.")
                     crawl(item)
 
 

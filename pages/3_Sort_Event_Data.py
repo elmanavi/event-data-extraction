@@ -19,7 +19,8 @@ def prev_element():
     st.session_state.visited_urls = None
 
 def render_url_content(element):
-        components.html(element["cleaned_html"], height=400, scrolling=True)
+    with st.container(border=True):
+        components.html(element["cleaned_html"] + "<script>window.print = function() {console.log('Drucken ist deaktiviert.');};</script>", height=400, scrolling=True)
 
 def save_event_url():
     new_element = current_element
@@ -54,10 +55,11 @@ st.write("""
     falsch ist, muss die URL gelöscht werden. Wenn es korrekt zugeordnet ist können die Daten gespeichert werden. \n 
     **ACHTUNG** Teilweise sind die Daten unvollständig. Das liegt daran, dass das HTML gekürzt wurde, 
     für die Sortierung ist das irrelvant, also auch abgeschnittene Events gehören in die Event-DB.\n
-    **Übersichtsseiten müssen Listen von Events enthalten. Eine Seite mit Kategorien oder anderen Links ist keine Übersichtsseite** 
+    **Übersichtsseiten müssen Listen von Events enthalten. Eine Seite mit Kategorien oder anderen Links ist keine Übersichtsseite.** 
     """)
-st.write(f"Nr. {st.session_state.index} - Aktuelle Seite: \n{current_url}")
-st.write(f"Predicted Class: {current_element["class"]}")
+st.write("")
+st.write(f"""### Nr. {st.session_state.index} - Aktuelle Seite: \n{current_url}""")
+st.write(f"""#### Predicted Class: {current_element["class"]}""")
 render_url_content(current_element)
 
 # Buttons
@@ -72,13 +74,7 @@ with col3:
 
 with col4:
     st.button("URL löschen", on_click= remove_url)
-# with col5:
-#     if st.button("Rückgänig"):
-#         if "last_element" in st.session_state:
-#             st.session_state.last_element["final"]=False
-#             db.insert_or_update_document(CollectionNames.EVENT_URLS, st.session_state.last_element)
-#             print(f"Aktion für {st.session_state.last_element["URL"]} rückgängig gemacht.")
-#             st.session_state.all_urls = get_all_urls()
+
 
 
 
