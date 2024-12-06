@@ -47,6 +47,7 @@ def process_url(url:str, el):
                 return new_element
     except Exception as e:
         st.error(f"Es is ein Fehler aufgetreten, die url {url} wird übersprungen")
+        print(e)
 
 db = init_connection()
 
