@@ -60,7 +60,8 @@ class Database:
       Löscht ein Dokument aus der Collection basierend auf der URL.
       """
       collection = self.get_collection(collection_name)
-      result = collection.delete_one({"url": re.compile(url, re.IGNORECASE)})
+      result = collection.delete_one({"url": url})
+      print(result.deleted_count)
       return result.deleted_count  # Gibt die Anzahl der gelöschten Dokumente zurück (1 oder 0)
 
    def get_collection_contents(self, collection_name):

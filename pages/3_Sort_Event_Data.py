@@ -57,6 +57,7 @@ st.write("""
     für die Sortierung ist das irrelvant, also auch abgeschnittene Events gehören in die Event-DB.\n
     **Übersichtsseiten müssen Listen von Events enthalten. Eine Seite mit Kategorien oder anderen Links ist keine Übersichtsseite.** 
     """)
+st.info("Es sollen nur deutsche Texte verarbeitet werden. Alle anderen Texte müssen gelöscht werden. (Teilweise englisch ist okay)")
 st.write("")
 st.write(f"""### Nr. {st.session_state.index} - Aktuelle Seite: \n{current_url}""")
 st.write(f"""#### Predicted Class: {current_element["class"]}""")
@@ -71,9 +72,8 @@ with col2:
     st.button("Weiter", on_click=next_element, disabled=(st.session_state.index == len(elements) - 1))
 with col3:
     st.button("Als Event-URL speichern", on_click=save_event_url)
-
 with col4:
-    st.button("URL löschen", on_click= remove_url)
+    st.button("URL löschen", on_click=remove_url)
 
 
 
