@@ -6,6 +6,8 @@ from src.crawler.CrawlerV2 import *
 import streamlit_nested_layout
 from bs4 import BeautifulSoup
 from src.data_analysis.gpt_api import classify_text
+import random
+
 
 @st.cache_resource
 def init_connection():
@@ -96,7 +98,7 @@ if get_event_data:
                             except:
                                 print("Exception while processing links")
                             if len(urls) > suburls_count:
-                                urls= set(list(urls)[:10])
+                                urls= set(random.sample(list(urls), 10))
                             for url in urls:
                                 new_element = process_url(url, el)
                             if not urls:
