@@ -9,3 +9,5 @@ Requests==2.32.3
 serpapi==0.1.5
 streamlit==1.40.1
 streamlit_nested_layout==0.1.4
+google-maps-places==0.1.20
+
