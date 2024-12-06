@@ -14,6 +14,9 @@ def get_clean_html(page_content:str):
     else:
         for tag in body_content.find_all(["footer", "script", "nav", "menu", "img"]):
             tag.decompose()
+        header = soup.find("header")
+        if header:
+            header.decompose()
         # for tag in body_content.find_all(True):
         #     try:
         #         if any(keyword in str(tag.get('class', [])).lower() for keyword in
