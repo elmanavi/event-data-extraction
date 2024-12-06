@@ -91,7 +91,7 @@ if get_event_data:
                                     href = link["href"]
                                     url = urljoin(overview_url, href)
                                     url = urlparse(url)._replace(query="", fragment="").geturl()
-                                    if overview_url != url:
+                                    if overview_url != url and check_regex(url, PATTERNS):
                                         urls.add(url)
                             except:
                                 print("Exception while processing links")
