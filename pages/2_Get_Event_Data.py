@@ -26,7 +26,6 @@ def process_url(url:str, el):
             cleaned_html = get_clean_html(page_content)
             cleaned_text = get_clean_text(cleaned_html)
             gpt_class = classify_text(cleaned_html)
-            # gpt_class = {"class": "Event"}
             with st.expander(url):
                 st.write("Bereinigtes HTML:")
                 with st.container(border=True):
@@ -46,8 +45,8 @@ def process_url(url:str, el):
                 db.insert_or_update_document(CollectionNames.EVENT_URLS, new_element)
                 return new_element
     except Exception as e:
-        st.error(f"Es is ein Fehler aufgetreten, die url {url} wird übersprungen")
-        print(e)
+        st.error(f"Es is ein Fehler aufgetreten, die url {url} wird übersprungen\n Fehlermeldung: {e}")
+
 
 db = init_connection()
 
