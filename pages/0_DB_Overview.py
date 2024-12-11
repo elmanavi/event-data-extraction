@@ -69,7 +69,7 @@ with st.expander("unsorted_urls sortiert nach url-types"):
 
 
 overview_pages = [i for i in st.session_state.unsorted_urls if "overview_pages" in i]
-st.write(f" {len(overview_pages)} URLs enthalten potentielle Even-Übersichtsseiten (vom Crawler gefunden):")
+st.write(f" {len(overview_pages)} URLs enthalten potentielle Event-Übersichtsseiten (vom Crawler gefunden):")
 
 with st.expander("unsorted_urls mit Übersichtsseiten"):
     for element in overview_pages:
@@ -78,20 +78,19 @@ with st.expander("unsorted_urls mit Übersichtsseiten"):
                 st.write(url)
 
 
-overview_pages = [e for e in st.session_state.event_urls if e["class"]=="EventOverview"]
-detail_pages = [e for e in st.session_state.event_urls if e["class"]=="EventDetail"]
+overview_pages = [e for e in st.session_state.event_urls if e["class"]=="EventOverview" and "final" in e]
+detail_pages = [e for e in st.session_state.event_urls if e["class"]=="EventDetail" and "final" in e]
 
-# content
 st.subheader("Einträge in Event Urls")
 st.write("""
     Die Übersicht zeigt die finalen Daten aus **event_urls**, sortiert nach ihrer Klasse.""")
 with st.expander(f"Event-Übersichtsseiten ({len(overview_pages)})"):
     for el in overview_pages:
-        with st.expander(el["url"]):
+        with st.expander(f"{el["url"]} - ({[e for e in st.session_state.unsorted_urls if el["base_url_id"] == e["_id"]][0]["url_type"]})"):
             components.html(el["cleaned_html"] + "<script>window.print = function() {console.log('Drucken ist deaktiviert.');};</script>", height=400, scrolling=True)
 with st.expander(f"Event-Detailseiten ({len(detail_pages)})"):
     for el in detail_pages:
-        with st.expander(el["url"]):
+        with st.expander(f"{el["url"]} - ({[e for e in st.session_state.unsorted_urls if el["base_url_id"] == e["_id"]][0]["url_type"]})"):
             components.html(el["cleaned_html"] + "<script>window.print = function() {console.log('Drucken ist deaktiviert.');};</script>", height=400, scrolling=True)
 
 
