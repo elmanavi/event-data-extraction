@@ -85,14 +85,24 @@ st.subheader("Einträge in Event Urls")
 st.write("""
     Die Übersicht zeigt die finalen Daten aus **event_urls**, sortiert nach ihrer Klasse.""")
 with st.expander(f"Event-Übersichtsseiten ({len(overview_pages)})"):
-    for el in overview_pages:
-        with st.expander(f"{el["url"]} - ({[e for e in st.session_state.unsorted_urls if el["base_url_id"] == e["_id"]][0]["url_type"]})"):
-            components.html(el["cleaned_html"] + "<script>window.print = function() {console.log('Drucken ist deaktiviert.');};</script>", height=400, scrolling=True)
-with st.expander(f"Event-Detailseiten ({len(detail_pages)})"):
-    for el in detail_pages:
-        with st.expander(f"{el["url"]} - ({[e for e in st.session_state.unsorted_urls if el["base_url_id"] == e["_id"]][0]["url_type"]})"):
-            components.html(el["cleaned_html"] + "<script>window.print = function() {console.log('Drucken ist deaktiviert.');};</script>", height=400, scrolling=True)
+    try:
+        for el in overview_pages:
+            with st.expander(f"{el["url"]} - ({[e for e in st.session_state.unsorted_urls if el["base_url_id"] == e["_id"]][0]["url_type"]})"):
+                components.html(el["cleaned_html"] + "<script>window.print = function() {console.log('Drucken ist deaktiviert.');};</script>", height=400, scrolling=True)
+    except Exception as e:
+        st.write(f"Fehler: {e}")
+        db.delete_document_by_url(CollectionNames.EVENT_URLS,el["url"])
+        st.session_state.event_urls = list(db.get_collection_contents(CollectionNames.EVENT_URLS))
 
+with st.expander(f"Event-Detailseiten ({len(detail_pages)})"):
+    try:
+        for el in detail_pages:
+            with st.expander(f"{el["url"]} - ({[e for e in st.session_state.unsorted_urls if el["base_url_id"] == e["_id"]][0]["url_type"]})"):
+                components.html(el["cleaned_html"] + "<script>window.print = function() {console.log('Drucken ist deaktiviert.');};</script>", height=400, scrolling=True)
+    except Exception as e:
+        st.write(f"Fehler bei {el["url"]}: {e} ")
+        db.delete_document_by_url(CollectionNames.EVENT_URLS, el["url"])
+        st.session_state.event_urls = list(db.get_collection_contents(CollectionNames.EVENT_URLS))
 
 
 

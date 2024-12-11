@@ -56,7 +56,7 @@ if "db_entries" not in st.session_state:
     st.session_state.db_entries = db.get_collection_contents(CollectionNames.UNSORTED_URLS)
 
 if "filtered_list" not in st.session_state:
-    st.session_state.filtered_list = [el for el in st.session_state.db_entries if "overview_pages" in el and "checked" not in el]
+    st.session_state.filtered_list = [el for el in st.session_state.db_entries if "overview_pages" in el and el["overview_pages"] and "checked" not in el  ]
 
 suburls_count = 10
 
@@ -93,7 +93,7 @@ if get_event_data:
                                     href = link["href"]
                                     url = urljoin(overview_url, href)
                                     url = urlparse(url)._replace(query="", fragment="").geturl()
-                                    if overview_url != url and check_regex(url, PATTERNS):
+                                    if overview_url != url and check_regex(url, PATTERNS) and str(urlparse(overview_url).scheme)+str(urlparse(overview_url).netloc) != url:
                                         urls.add(url)
                             except:
                                 print("Exception while processing links")

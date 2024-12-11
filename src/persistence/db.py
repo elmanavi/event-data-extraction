@@ -8,7 +8,6 @@ DB_NAME = "event_data"
 class CollectionNames:
    EVENT_URLS = "event_urls"
    UNSORTED_URLS = "unsorted_urls"
-   MAPS_QUERIES = "maps_search_queries"
 
 class Database:
    def __init__(self):
