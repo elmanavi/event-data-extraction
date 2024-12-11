@@ -10,6 +10,7 @@ import random
 from urllib.parse import urlparse
 import streamlit_nested_layout
 
+from src.persistence.db_queries import insert_json_file_to_db
 
 # Schema
 # {
@@ -26,10 +27,6 @@ st.title("Event-Urls-Suche mit Crawler und Google API")
 @st.cache_resource
 def init_connection():
     return Database()
-
-@st.cache_resource
-def init_maps_queries():
-    return db.get_collection_contents("maps_search_queries")
 
 def crawl(item):
 
@@ -86,8 +83,7 @@ def crawl(item):
 
 
 db = init_connection()
-if "maps_queries" not in st.session_state:
-    st.session_state.maps_queries = list(db.get_collection_contents(CollectionNames.MAPS_QUERIES))
+
 
 # content
 st.write("""
@@ -123,7 +119,11 @@ with st.form("Crawler Settings"):
                                     new_elements = []
                                     with st.expander("Maps Ergebnisse"):
                                         for result in maps_results:
-                                            if "facebook" not in result.website_uri and "instagram" not in result.website_uri and "tiktok" not in result.website_uri:
+                                            if result.website_uri \
+                                                    and "facebook" not in result.website_uri \
+                                                    and "instagram" not in result.website_uri \
+                                                    and "tiktok" not in result.website_uri \
+                                                    and result.website_uri not in [e["url"] for e in new_elements]:
                                                 element = {
                                                     "url_type": type_id,
                                                     "url": result.website_uri,
@@ -133,7 +133,7 @@ with st.form("Crawler Settings"):
                                                         "address": result.formatted_address,
                                                         "maps_types": list(result.types)
                                                     }}
-                                                st.write(element["url"])
+                                                st.write(f"{element["meta"]["website_host"]} - {element["url"]}")
                                                 new_elements.append(element)
                                         if new_elements:
                                             db.insert_url_list(CollectionNames.UNSORTED_URLS, new_elements)
