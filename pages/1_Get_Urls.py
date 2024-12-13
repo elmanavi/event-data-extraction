@@ -1,16 +1,10 @@
-import re
-import struct
-
 from src.crawler.CrawlerV2 import Crawler
 from src.crawler.crawler_service import *
 from src.crawler.maps_api import get_maps_results
 from src.crawler.utils.maps_types import MAPS_TYPES
 from src.persistence.db import *
 import random
-from urllib.parse import urlparse
 import streamlit_nested_layout
-
-from src.persistence.db_queries import insert_json_file_to_db
 
 # Schema
 # {
@@ -26,7 +20,7 @@ st.title("Event-Urls-Suche mit Crawler und Google API")
 
 @st.cache_resource
 def init_connection():
-    return Database()
+    return init_db()
 
 def crawl(item):
 
@@ -39,8 +33,9 @@ def crawl(item):
                 results = crawler.crawl()
         except Exception as e:
             st.error(f"Fehler beim crawlen: {e}")
-            db.delete_document_by_url(source,item["url"])
+            db.unsorted_urls.delete_one({"_id":item["_id"]})
             return
+
         # Übersicht-Seiten erkennen
         overview_regex = re.compile(
             r"^https?:\/\/([a-zA-Z0-9.-]*\/)*(?!(advent))(kalender|.*veranstaltungen|veranstaltungskalender|.*events?|.*event-?kalender|([a-zA-Z]*)?programm|gottesdienste|auff(ü|ue)hrungen|termine|spielplan)(\/?|(\/?[a-zA-Z]*)\.[a-zA-Z]*)?$",
@@ -73,13 +68,15 @@ def crawl(item):
 
 
         # Update DB entry
+        new_values = {"$set": {"crawled": True}}
         if overview_pages:
-            item["overview_pages"] = list(overview_pages)
+            new_values["$set"]["overview_pages"] = list(overview_pages)
         if sub_urls:
             item["sub_urls"] = sub_urls
-        item["crawled"] = True
-        db.insert_or_update_document(source, item)
+            new_values["$set"]["sub_urls"] = sub_urls
 
+        db.unsorted_urls.update_one({"_id":item["_id"]}, new_values)
+        print(db.unsorted_urls.find_one({"_id":item["_id"]}))
 
 
 db = init_connection()
@@ -90,22 +87,22 @@ st.write("""
     Wähle aus für wie viele Urls der **Crawler** gestartert werden soll. Diese werden zufällig aus den noch nicht gecrawlten Urls aus der DB ausgewählt.
     Wenn **"Google Maps Ergebnisse finden"** aktiviert ist, werden bei den Stadtportalen zusätzlich noch neue Veranstaltungsorte gesucht.""")
 with st.form("Crawler Settings"):
-    source = CollectionNames.UNSORTED_URLS
     count = st.number_input("Wie viele URLs sollen gecrawled werden?", step=1)
     maps = st.checkbox("Google Maps Ergebnisse finden")
     # Every form must have a submit button.
     submitted = st.form_submit_button("Starte Crawler")
     if submitted:
-        url_list = list(db.get_collection_contents(source))
-        url_list = [
-            item for item in url_list
-            if 'crawled' not in item or not item['crawled']
-        ]
-        if not url_list:
-            st.success("Alle Urls wurden bereits gecrawled")
-        else:
-            sampled_items = random.sample(url_list, k=min(count, len(url_list)))
-            for item in sampled_items:
+        # url_list = list(db.get_collection_contents(source))
+        # url_list = [
+        #     item for item in url_list
+        #     if 'crawled' not in item or not item['crawled']
+        # ]
+        # if not url_list:
+        #     st.success("Alle Urls wurden bereits gecrawled")
+        # else:
+        #     sampled_items = random.sample(url_list, k=min(count, len(url_list)))
+            for i in range(count):
+                item = db.unsorted_urls.find_one({"crawled": None })
                 with st.expander(f"Ergebnisse für {item["url"]} in {item["meta"]["location"]}"):
 
                     if item["url_type"] == "city" and maps:
@@ -136,7 +133,7 @@ with st.form("Crawler Settings"):
                                                 st.write(f"{element["meta"]["website_host"]} - {element["url"]}")
                                                 new_elements.append(element)
                                         if new_elements:
-                                            db.insert_url_list(CollectionNames.UNSORTED_URLS, new_elements)
+                                            db.unsorted_urls.insert_many(new_elements)
 
 
                                 if "maps_searches" in item:
